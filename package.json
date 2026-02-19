@@ -1,0 +1,52 @@
+{
+  "name": "@danielrebolledo/cafe-ipdh-lib",
+  "version": "1.0.6",
+  "description": "Librería para gestionar impresoras fiscales y de recibos (AEG-R1, DTP, etc.)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:dtp": "tsx src/printers/dtp/dtp-printer-test.ts",
+    "test:dtp-cert": "tsx src/printers/dtp/dtp-certificacion-test.ts"
+  },
+  "keywords": [
+    "printer",
+    "fiscal",
+    "invoice",
+    "receipt",
+    "aeg",
+    "dtp"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.5",
+    "@types/node": "^25.2.3",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.0"
+  }
+}
