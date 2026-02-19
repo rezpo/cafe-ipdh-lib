@@ -1,6 +1,6 @@
 {
   "name": "@danielrebolledo/cafe-ipdh-lib",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "Librería para gestionar impresoras fiscales y de recibos (AEG-R1, DTP, etc.)",
   "type": "module",
   "main": "./dist/index.js",
