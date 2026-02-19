@@ -1,0 +1,5 @@
+# Copia este archivo a .npmrc y reemplaza YOUR_NPM_TOKEN con tu token de npm.
+# .npmrc está en .gitignore y NO debe subirse al repositorio.
+# Genera tokens en: https://www.npmjs.com/settings/~/tokens
+
+//registry.npmjs.org/:_authToken=YOUR_NPM_TOKEN
