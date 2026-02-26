@@ -3,9 +3,10 @@ import {
 	PrinterTaxValues,
 	TaxValues,
 } from "../../types/enums.js";
+import type { Invoice } from "../../types/invoice.js";
 import type { Order } from "../../types/order.js";
 import type {
-	BuildCreditNoteOptions,
+	BuildCreditNoteFromInvoiceOptions,
 	BuildInvoiceOptions,
 	BuildReceiptOptions,
 	PrinterDriver,
@@ -49,18 +50,14 @@ function formatTime(date: Date): string {
 function mapTaxIdToDtpCode(taxId: string | null | undefined): number {
 	if (!taxId) return 0;
 	const taxIdUpper = taxId.toUpperCase();
-	const aegCode =
-		PrinterTaxValues[taxIdUpper as keyof typeof PrinterTaxValues];
+	const aegCode = PrinterTaxValues[taxIdUpper as keyof typeof PrinterTaxValues];
 	if (aegCode === undefined) return 0;
 	const n = Number(aegCode);
 	// DTP iImpuesto: 0=exento, 1=16%, 2=8%, 3=31%, 4=percibido
 	if (n === PrinterTaxValues.EXENTO_E) return 0;
-	if (n === PrinterTaxValues.BI_G || n === PrinterTaxValues.IVA_G)
-		return 1;
-	if (n === PrinterTaxValues.BI_R || n === PrinterTaxValues.IVA_R)
-		return 2;
-	if (n === PrinterTaxValues.BI_A || n === PrinterTaxValues.IVA_A)
-		return 3;
+	if (n === PrinterTaxValues.BI_G || n === PrinterTaxValues.IVA_G) return 1;
+	if (n === PrinterTaxValues.BI_R || n === PrinterTaxValues.IVA_R) return 2;
+	if (n === PrinterTaxValues.BI_A || n === PrinterTaxValues.IVA_A) return 3;
 	if (
 		n === PrinterTaxValues.PERCIBIDO ||
 		n === PrinterTaxValues.BI_IGTF ||
@@ -242,31 +239,19 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 	},
 
 	buildCreditNoteCommands(
-		order: Order,
-		options: BuildCreditNoteOptions,
+		invoice: Invoice,
+		options: BuildCreditNoteFromInvoiceOptions,
 	): DtpPrinterCommand[] {
 		const commands: DtpPrinterCommand[] = [];
 
-		if (!order) {
-			throw new Error("Order es requerido");
-		}
-		if (!order.client) {
-			throw new Error("Order debe tener un cliente asociado");
-		}
-		if (!order.items || order.items.length === 0) {
-			throw new Error("Order debe tener al menos un item");
+		if (!invoice.details?.length && !(invoice.totalAmount > 0)) {
+			throw new Error("Invoice debe tener details o totalAmount");
 		}
 
-		const {
-			referenceInvoiceNumber,
-			referenceInvoiceDate,
-			referenceInvoiceSerial = "",
-			paymentMethodId,
-			storeName = "N/A",
-		} = options;
+		const { paymentMethodId, storeName = "N/A" } = options;
 
-		const clientName = order.client.name || "";
-		const clientRif = order.client.id || "";
+		const clientName = invoice.customerName || "";
+		const clientRif = invoice.customerID || "";
 		const storeLine = `Tienda: ${storeName}`;
 
 		commands.push({
@@ -275,9 +260,11 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 				iTipo: 1,
 				sNombreCliente: truncateString(clientName, 64),
 				sRifCliente: truncateString(clientRif, 20),
-				iFacturaReferencia: referenceInvoiceNumber,
-				fechaReferencia: referenceInvoiceDate,
-				sSerialReferencia: truncateString(referenceInvoiceSerial, 20),
+				iFacturaReferencia: invoice.invoiceRef,
+				fechaReferencia: new Date(invoice.createdAt),
+				sSerialReferencia:
+					options.referenceInvoiceSerial ??
+					invoice.invoiceRef.toString().padStart(8, "0"),
 				bLogo: false,
 				sLineaAdicional: truncateString(storeLine, 64),
 			},
@@ -285,33 +272,49 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 
 		let subtotalWithoutTaxes = 0;
 
-		for (const item of order.items) {
-			if (!item.name) continue;
-
-			const taxId =
-				item.taxes && item.taxes.length > 0 ? item.taxes[0].id : null;
-			const iImpuesto = mapTaxIdToDtpCode(taxId);
-			const price = item.price ?? 0;
-			const lPrecio = Math.round(Math.max(price, 0) * 100);
-			const quantity = item.selectedQuantity ?? item.quantity ?? 1;
-			const lCantidad = -Math.round(Math.max(quantity, 1) * 1000);
-
-			subtotalWithoutTaxes += price * Math.max(quantity, 1);
-
+		if (!invoice.details || invoice.details.length === 0) {
 			commands.push({
 				cmd: "F1",
 				data: {
 					iTipo: 1,
-					sDescripcion: truncateString(item.name, 64),
-					sCodigo: truncateString(item.sku ?? "N/A", 20),
-					lCantidad,
+					sDescripcion: "DEVOLUCION",
+					sCodigo: "DEV",
+					lCantidad: -1000,
 					sUnidad: "UND",
-					lPrecio,
-					iImpuesto,
+					lPrecio: Math.round(invoice.totalAmount * 100),
+					iImpuesto: mapTaxIdToDtpCode(
+						invoice.taxesBreakdown?.[0]?.taxId ?? null,
+					),
 					iDecPrecio: 2,
 					iDecCantidad: 3,
 				},
 			});
+		} else {
+			for (const item of invoice.details) {
+				const taxId = invoice.taxesBreakdown?.[0]?.taxId ?? null;
+				const iImpuesto = mapTaxIdToDtpCode(taxId);
+				const price = item.price ?? 0;
+				const lPrecio = Math.round(Math.max(price, 0) * 100);
+				const quantity = item.quantity ?? 1;
+				const lCantidad = -Math.round(Math.max(quantity, 1) * 1000);
+
+				subtotalWithoutTaxes += price * Math.max(quantity, 1);
+
+				commands.push({
+					cmd: "F1",
+					data: {
+						iTipo: 1,
+						sDescripcion: truncateString(item.description, 64),
+						sCodigo: "N/A",
+						lCantidad,
+						sUnidad: "UND",
+						lPrecio,
+						iImpuesto,
+						iDecPrecio: 2,
+						iDecCantidad: 3,
+					},
+				});
+			}
 		}
 
 		const isForeignCurrency =
@@ -347,38 +350,39 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 			data: { mode: 1, foreignCurrencyAmount: 0 },
 		});
 
-		if (!order.payments?.length) {
-			throw new Error("Order debe tener al menos un pago exitoso");
-		}
+		const lMonto = Math.round(invoice.totalAmount * 100);
+		const tipo = mapPaymentMethod(
+			paymentMethodId === "cash_int"
+				? "cash_int"
+				: paymentMethodId === "pos_debit_credit_int"
+					? "pos_debit_credit_int"
+					: paymentMethodId === "pos_credit"
+						? "pos_credit"
+						: paymentMethodId === "pos_debit"
+							? "pos_debit"
+							: "cash_nat",
+		);
 
-		for (const payment of order.payments) {
-			const tipo = mapPaymentMethod(payment.paymentMethod);
-			const lMonto = Math.round(payment.amount * 100);
-			const isForeign =
-				payment.paymentMethod === "pos_debit_credit_int" ||
-				payment.paymentMethod === "cash_int";
-
-			if (isForeign) {
-				commands.push({
-					cmd: "F11",
-					data: {
-						iFormaPago: tipo,
-						sDescripcion: paymentMethodLabel(tipo),
-						lMonto,
-						lTasaCambio: 1,
-						sSimbolo: "USD",
-					},
-				});
-			} else {
-				commands.push({
-					cmd: "F4",
-					data: {
-						iFormaPago: tipo,
-						sDescripcion: paymentMethodLabel(tipo),
-						lMonto,
-					},
-				});
-			}
+		if (isForeignCurrency) {
+			commands.push({
+				cmd: "F11",
+				data: {
+					iFormaPago: tipo,
+					sDescripcion: paymentMethodLabel(tipo),
+					lMonto,
+					lTasaCambio: 1,
+					sSimbolo: "USD",
+				},
+			});
+		} else {
+			commands.push({
+				cmd: "F4",
+				data: {
+					iFormaPago: tipo,
+					sDescripcion: paymentMethodLabel(tipo),
+					lMonto,
+				},
+			});
 		}
 
 		commands.push({ cmd: "F5", data: {} });
@@ -487,8 +491,7 @@ export async function executeDtpCommands(
 			}
 			case "F11": {
 				const r = await payFiscalDocForeignCurrency(client, cmd.data);
-				if (r.code !== 0)
-					throw new Error(`F11 falló: código ${r.code}`);
+				if (r.code !== 0) throw new Error(`F11 falló: código ${r.code}`);
 				break;
 			}
 			case "N0": {
@@ -514,7 +517,9 @@ export async function executeDtpCommands(
 			}
 			default: {
 				const _: never = cmd;
-				throw new Error(`Comando DTP desconocido: ${String((cmd as { cmd: string }).cmd)}`);
+				throw new Error(
+					`Comando DTP desconocido: ${String((cmd as { cmd: string }).cmd)}`,
+				);
 			}
 		}
 	}

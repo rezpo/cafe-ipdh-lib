@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
+import type { Invoice } from "../../types/invoice.js";
 import type { Order } from "../../types/order.js";
 import { dtpPrinter } from "./dtp-printer-driver.js";
+
+const mockInvoice: Invoice = {
+	invoiceRef: 42,
+	createdAt: "2025-02-01T10:00:00.000Z",
+	customerName: "Cliente Test",
+	customerID: "V12345678",
+	totalAmount: 21,
+	details: [
+		{
+			description: "Producto 1",
+			quantity: 2,
+			price: 10.5,
+		},
+	],
+	taxesBreakdown: [{ taxId: "IVA_G" }],
+};
 
 const mockOrder: Order = {
 	client: {
@@ -133,13 +150,18 @@ describe("dtpPrinter", () => {
 	});
 
 	describe("buildCreditNoteCommands", () => {
-		it("genera comandos válidos de nota de crédito", () => {
-			const commands = dtpPrinter.buildCreditNoteCommands!(mockOrder, {
-				referenceInvoiceNumber: 42,
-				referenceInvoiceDate: new Date("2025-02-01"),
-				referenceInvoiceSerial: "F001",
+		let buildCreditNoteCommands: NonNullable<typeof dtpPrinter.buildCreditNoteCommands>;
+		beforeAll(() => {
+			const fn = dtpPrinter.buildCreditNoteCommands;
+			if (!fn) throw new Error("buildCreditNoteCommands not implemented");
+			buildCreditNoteCommands = fn;
+		});
+
+		it("genera comandos válidos de nota de crédito con items", () => {
+			const commands = buildCreditNoteCommands(mockInvoice, {
 				paymentMethodId: "cash_nat",
 				storeName: "Tienda Test",
+				referenceInvoiceSerial: "F001",
 			});
 
 			expect(commands).toBeInstanceOf(Array);
@@ -149,11 +171,13 @@ describe("dtpPrinter", () => {
 			expect(f0.data.iTipo).toBe(1);
 			expect(f0.data.iFacturaReferencia).toBe(42);
 			expect(f0.data.sSerialReferencia).toBe("F001");
+			expect(f0.data.sNombreCliente).toBe("Cliente Test");
+			expect(f0.data.sRifCliente).toBe("V12345678");
 
 			const f1Item = commands.find(
 				(c) =>
 					c.cmd === "F1" &&
-					(c as { data: { sCodigo: string } }).data.sCodigo === "SKU001",
+					(c as { data: { sDescripcion: string } }).data.sDescripcion === "Producto 1",
 			) as { data: { lCantidad: number; iTipo: number } };
 			expect(f1Item).toBeDefined();
 			expect(f1Item.data.lCantidad).toBeLessThan(0);
@@ -163,19 +187,82 @@ describe("dtpPrinter", () => {
 				expect.objectContaining({ cmd: "F2", data: expect.objectContaining({ mode: 1 }) }),
 			);
 			expect(commands).toContainEqual(
+				expect.objectContaining({ cmd: "F4", data: expect.objectContaining({ sDescripcion: "EFECTIVO" }) }),
+			);
+			expect(commands).toContainEqual(
 				expect.objectContaining({ cmd: "F5", data: expect.anything() }),
 			);
 		});
 
-		it("falla sin cliente", () => {
-			const orderSinCliente: Order = { ...mockOrder, client: null };
+		it("usa invoiceRef con padding cuando no hay referenceInvoiceSerial", () => {
+			const commands = buildCreditNoteCommands(mockInvoice, {
+				paymentMethodId: "cash_nat",
+				storeName: "Tienda Test",
+			});
+			const f0 = commands[0] as { data: { sSerialReferencia: string } };
+			expect(f0.data.sSerialReferencia).toBe("00000042");
+		});
+
+		it("genera línea DEVOLUCION cuando details está vacío", () => {
+			const invoiceSinDetails: Invoice = {
+				...mockInvoice,
+				details: [],
+				totalAmount: 50,
+			};
+			const commands = buildCreditNoteCommands(invoiceSinDetails, {
+				paymentMethodId: "cash_nat",
+				storeName: "Tienda Test",
+			});
+
+			const devolucionItem = commands.find(
+				(c) =>
+					c.cmd === "F1" &&
+					(c as { data: { sDescripcion: string } }).data.sDescripcion === "DEVOLUCION",
+			);
+			expect(devolucionItem).toBeDefined();
+			expect((devolucionItem as { data: { lPrecio: number } }).data.lPrecio).toBe(5000);
+		});
+
+		it("agrega IGTF para pago en divisas con items", () => {
+			const commands = buildCreditNoteCommands(mockInvoice, {
+				paymentMethodId: "cash_int",
+				storeName: "Tienda",
+			});
+			const igtfItem = commands.find(
+				(c) =>
+					c.cmd === "F1" &&
+					(c as { data: { sDescripcion: string } }).data.sDescripcion.includes("IGTF"),
+			);
+			expect(igtfItem).toBeDefined();
+			expect(commands).toContainEqual(
+				expect.objectContaining({ cmd: "F11", data: expect.objectContaining({ sSimbolo: "USD" }) }),
+			);
+		});
+
+		it("falla cuando no hay details ni totalAmount", () => {
+			const invoiceInvalido: Invoice = {
+				...mockInvoice,
+				details: [],
+				totalAmount: 0,
+			};
 			expect(() =>
-				dtpPrinter.buildCreditNoteCommands!(orderSinCliente, {
-					referenceInvoiceNumber: 1,
-					referenceInvoiceDate: new Date(),
+				buildCreditNoteCommands(invoiceInvalido, {
 					paymentMethodId: "cash_nat",
 				}),
-			).toThrow("cliente asociado");
+			).toThrow("Invoice debe tener details o totalAmount");
+		});
+
+		it("falla cuando details es undefined y totalAmount es 0", () => {
+			const invoiceInvalido = {
+				...mockInvoice,
+				details: undefined,
+				totalAmount: 0,
+			} as unknown as Invoice;
+			expect(() =>
+				buildCreditNoteCommands(invoiceInvalido, {
+					paymentMethodId: "cash_nat",
+				}),
+			).toThrow("Invoice debe tener details o totalAmount");
 		});
 	});
 });

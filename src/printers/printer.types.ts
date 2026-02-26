@@ -1,3 +1,4 @@
+import type { Invoice } from "../types/invoice.js";
 import type { Order } from "../types/order.js";
 
 /**
@@ -81,7 +82,19 @@ export interface PrinterDriver<TCmd = unknown> {
 	 * Construye comandos para imprimir una nota de crédito fiscal (opcional).
 	 */
 	buildCreditNoteCommands?(
-		order: Order,
-		options: BuildCreditNoteOptions,
+		invoice: Invoice,
+		options: BuildCreditNoteFromInvoiceOptions,
 	): TCmd[];
+}
+
+export interface BuildCreditNoteFromInvoiceOptions {
+	paymentMethodId:
+		| "pos_credit"
+		| "pos_debit"
+		| "pos_debit_credit_int"
+		| "cash_int"
+		| "cash_nat";
+	storeName?: string;
+	/** Serial fiscal de la factura original (opcional). Por defecto usa invoiceRef con padding. */
+	referenceInvoiceSerial?: string;
 }
