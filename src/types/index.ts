@@ -4,10 +4,5 @@ export {
 	PrinterTaxValues,
 	TaxValues,
 } from "./enums.js";
-export type {
-	FiscalClient,
-	ItemTax,
-	Order,
-	OrderItem,
-	OrderPayment,
-} from "./order.js";
+export type { FiscalClient, ItemTax, Order, OrderItem, OrderPayment } from "./order.js";
+export type { Invoice, InvoiceDetail, InvoiceTaxBreakdown } from "./invoice.js";

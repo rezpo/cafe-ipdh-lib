@@ -19,6 +19,7 @@
 
 export { DtpClient } from "./printers/dtp/dtp-client";
 export type {
+	BuildCreditNoteFromInvoiceOptions,
 	BuildCreditNoteOptions,
 	BuildInvoiceOptions,
 	BuildReceiptOptions,
@@ -34,6 +35,7 @@ export type {
 export {
 	aegPrinter,
 	dtpPrinter,
+	executeDtpCommands,
 } from "./printers/index";
 export { sendPrinterCommands } from "./runner/index";
 export type {
@@ -48,6 +50,9 @@ export type {
 export type {
 	AegPrinterCommand,
 	FiscalClient,
+	Invoice,
+	InvoiceDetail,
+	InvoiceTaxBreakdown,
 	ItemTax,
 	Order,
 	OrderItem,

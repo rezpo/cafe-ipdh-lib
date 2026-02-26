@@ -8,6 +8,7 @@ export type { DtpPrinterCommand } from "./dtp/dtp-commands.js";
 export type { CreateDtpConnection, DtpSocketLike } from "./dtp/dtp-transport.types.js";
 export type { DtpOptions } from "./dtp/dtp-client.js";
 export type {
+	BuildCreditNoteFromInvoiceOptions,
 	BuildCreditNoteOptions,
 	BuildInvoiceOptions,
 	BuildReceiptOptions,
