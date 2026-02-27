@@ -237,7 +237,6 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 
 		return commands;
 	},
-
 	buildCreditNoteCommands(
 		invoice: Invoice,
 		options: BuildCreditNoteFromInvoiceOptions,
@@ -276,7 +275,7 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: 1,
+					iTipo: 0,
 					sDescripcion: "DEVOLUCION",
 					sCodigo: "DEV",
 					lCantidad: -1000,
@@ -303,7 +302,7 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 				commands.push({
 					cmd: "F1",
 					data: {
-						iTipo: 1,
+						iTipo: 0,
 						sDescripcion: truncateString(item.description, 64),
 						sCodigo: "N/A",
 						lCantidad,
@@ -332,7 +331,7 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: 1,
+					iTipo: 0,
 					sDescripcion: "IGTF 3% pago en divisas",
 					sCodigo: "IGTF",
 					lCantidad: -1000,
@@ -389,7 +388,6 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 
 		return commands;
 	},
-
 	buildReceiptCommands(options: BuildReceiptOptions): DtpPrinterCommand[] {
 		const {
 			orderId,

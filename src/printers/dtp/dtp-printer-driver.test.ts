@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import type { Invoice } from "../../types/invoice.js";
 import type { Order } from "../../types/order.js";
 import { dtpPrinter } from "./dtp-printer-driver.js";
@@ -59,17 +59,27 @@ describe("dtpPrinter", () => {
 			expect(commands.length).toBeGreaterThan(0);
 			expect(commands[0]).toHaveProperty("cmd", "F0");
 			expect(commands[0]).toHaveProperty("data");
-			expect((commands[0] as { data: { sNombreCliente: string } }).data.sNombreCliente).toBe(
-				"Cliente Test",
+			expect(
+				(commands[0] as { data: { sNombreCliente: string } }).data
+					.sNombreCliente,
+			).toBe("Cliente Test");
+			expect(commands).toContainEqual(
+				expect.objectContaining({
+					cmd: "F1",
+					data: expect.objectContaining({ sCodigo: "SKU001" }),
+				}),
 			);
 			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F1", data: expect.objectContaining({ sCodigo: "SKU001" }) }),
+				expect.objectContaining({
+					cmd: "F2",
+					data: expect.objectContaining({ mode: 1 }),
+				}),
 			);
 			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F2", data: expect.objectContaining({ mode: 1 }) }),
-			);
-			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F4", data: expect.objectContaining({ sDescripcion: "EFECTIVO" }) }),
+				expect.objectContaining({
+					cmd: "F4",
+					data: expect.objectContaining({ sDescripcion: "EFECTIVO" }),
+				}),
 			);
 			expect(commands).toContainEqual(
 				expect.objectContaining({ cmd: "F5", data: expect.anything() }),
@@ -96,7 +106,9 @@ describe("dtpPrinter", () => {
 			const igtfItem = commands.find(
 				(c) =>
 					c.cmd === "F1" &&
-					(c as { data: { sDescripcion: string } }).data.sDescripcion.includes("IGTF"),
+					(c as { data: { sDescripcion: string } }).data.sDescripcion.includes(
+						"IGTF",
+					),
 			);
 			expect(igtfItem).toBeDefined();
 		});
@@ -122,7 +134,9 @@ describe("dtpPrinter", () => {
 			expect(commands).toContainEqual(
 				expect.objectContaining({
 					cmd: "N1",
-					data: expect.objectContaining({ line: expect.stringContaining("Bs 100") }),
+					data: expect.objectContaining({
+						line: expect.stringContaining("Bs 100"),
+					}),
 				}),
 			);
 			expect(commands).toContainEqual(expect.objectContaining({ cmd: "N3" }));
@@ -150,7 +164,9 @@ describe("dtpPrinter", () => {
 	});
 
 	describe("buildCreditNoteCommands", () => {
-		let buildCreditNoteCommands: NonNullable<typeof dtpPrinter.buildCreditNoteCommands>;
+		let buildCreditNoteCommands: NonNullable<
+			typeof dtpPrinter.buildCreditNoteCommands
+		>;
 		beforeAll(() => {
 			const fn = dtpPrinter.buildCreditNoteCommands;
 			if (!fn) throw new Error("buildCreditNoteCommands not implemented");
@@ -177,17 +193,24 @@ describe("dtpPrinter", () => {
 			const f1Item = commands.find(
 				(c) =>
 					c.cmd === "F1" &&
-					(c as { data: { sDescripcion: string } }).data.sDescripcion === "Producto 1",
+					(c as { data: { sDescripcion: string } }).data.sDescripcion ===
+						"Producto 1",
 			) as { data: { lCantidad: number; iTipo: number } };
 			expect(f1Item).toBeDefined();
 			expect(f1Item.data.lCantidad).toBeLessThan(0);
-			expect(f1Item.data.iTipo).toBe(1);
+			expect(f1Item.data.iTipo).toBe(0);
 
 			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F2", data: expect.objectContaining({ mode: 1 }) }),
+				expect.objectContaining({
+					cmd: "F2",
+					data: expect.objectContaining({ mode: 1 }),
+				}),
 			);
 			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F4", data: expect.objectContaining({ sDescripcion: "EFECTIVO" }) }),
+				expect.objectContaining({
+					cmd: "F4",
+					data: expect.objectContaining({ sDescripcion: "EFECTIVO" }),
+				}),
 			);
 			expect(commands).toContainEqual(
 				expect.objectContaining({ cmd: "F5", data: expect.anything() }),
@@ -217,10 +240,13 @@ describe("dtpPrinter", () => {
 			const devolucionItem = commands.find(
 				(c) =>
 					c.cmd === "F1" &&
-					(c as { data: { sDescripcion: string } }).data.sDescripcion === "DEVOLUCION",
+					(c as { data: { sDescripcion: string } }).data.sDescripcion ===
+						"DEVOLUCION",
 			);
 			expect(devolucionItem).toBeDefined();
-			expect((devolucionItem as { data: { lPrecio: number } }).data.lPrecio).toBe(5000);
+			expect(
+				(devolucionItem as { data: { lPrecio: number } }).data.lPrecio,
+			).toBe(5000);
 		});
 
 		it("agrega IGTF para pago en divisas con items", () => {
@@ -231,11 +257,16 @@ describe("dtpPrinter", () => {
 			const igtfItem = commands.find(
 				(c) =>
 					c.cmd === "F1" &&
-					(c as { data: { sDescripcion: string } }).data.sDescripcion.includes("IGTF"),
+					(c as { data: { sDescripcion: string } }).data.sDescripcion.includes(
+						"IGTF",
+					),
 			);
 			expect(igtfItem).toBeDefined();
 			expect(commands).toContainEqual(
-				expect.objectContaining({ cmd: "F11", data: expect.objectContaining({ sSimbolo: "USD" }) }),
+				expect.objectContaining({
+					cmd: "F11",
+					data: expect.objectContaining({ sSimbolo: "USD" }),
+				}),
 			);
 		});
 
