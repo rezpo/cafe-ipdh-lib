@@ -464,8 +464,7 @@ export async function executeDtpCommands(
 		switch (cmd.cmd) {
 			case "F0": {
 				const r = await openFiscalDoc(client, cmd.data);
-				if (r.code !== 0)
-					throw new Error(`F0 falló: código ${r.code} ${r.body?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F0 falló: ${r}`);
 				break;
 			}
 			case "F1": {
