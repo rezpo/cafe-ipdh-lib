@@ -43,7 +43,7 @@ export async function openFiscalDoc(client: DtpClient, args: AbrirCfArgs) {
 		args.fechaReferencia,
 		formatDateDDMMYYYY(new Date()),
 	);
-	const r = await client.send([
+	const body = [
 		"F0",
 		String(args.iTipo ?? 0),
 		args.sNombreCliente,
@@ -53,11 +53,14 @@ export async function openFiscalDoc(client: DtpClient, args: AbrirCfArgs) {
 		args.sSerialReferencia ?? "",
 		(args.bLogo ?? false) ? "1" : "0",
 		args.sLineaAdicional ?? "",
-	]);
+	];
+
+	const r = await client.send(body);
 	return {
 		code: parseCode(r),
 		documentNumber: Number(r[1] ?? -1),
 		raw: r,
+		body,
 	};
 }
 
