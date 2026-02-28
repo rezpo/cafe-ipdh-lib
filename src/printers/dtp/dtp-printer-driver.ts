@@ -22,6 +22,7 @@ import {
 	openNonFiscalDoc,
 	payFiscalDoc,
 	payFiscalDocForeignCurrency,
+	getSerializationData,
 	subtotalFiscalDoc,
 } from "./dtp-printer.js";
 
@@ -107,11 +108,24 @@ function paymentMethodLabel(id: PaymentMethodId): string {
 }
 
 /**
+ * Driver para impresora fiscal DTP-80i con soporte para obtener datos de serialización.
+ */
+export interface DtpPrinterDriver extends PrinterDriver<DtpPrinterCommand> {
+	/**
+	 * Obtiene los datos de serialización de la impresora fiscal (comando C2).
+	 * Retorna fiscalSerial, printerSerial, kitSerial, mfSerial y maSerial.
+	 */
+	getSerialization: typeof getSerializationData;
+}
+
+/**
  * Driver para impresora fiscal DTP-80i.
  * Construye comandos DTP compatibles con el protocolo TCP.
  */
-export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
+export const dtpPrinter: DtpPrinterDriver = {
 	model: "dtp-80i",
+
+	getSerialization: getSerializationData,
 
 	buildInvoiceCommands(
 		order: Order,
@@ -464,7 +478,10 @@ export async function executeDtpCommands(
 		switch (cmd.cmd) {
 			case "F0": {
 				const r = await openFiscalDoc(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F0 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0)
+					throw new Error(
+						`F0 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`,
+					);
 				break;
 			}
 			case "F1": {

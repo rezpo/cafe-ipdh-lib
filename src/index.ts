@@ -27,6 +27,7 @@ export type {
 	DocumentType,
 	DtpOptions,
 	DtpPrinterCommand,
+	DtpPrinterDriver,
 	DtpSocketLike,
 	ExecuteDtpCommandsResult,
 	PrinterCommandResponse,
