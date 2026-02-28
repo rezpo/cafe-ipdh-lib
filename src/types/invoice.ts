@@ -11,7 +11,7 @@ export interface InvoiceTaxBreakdown {
 }
 
 export interface Invoice {
-	invoiceRef: number;
+	invoiceRef: string;
 	createdAt: string;
 	customerName: string;
 	customerID: string;

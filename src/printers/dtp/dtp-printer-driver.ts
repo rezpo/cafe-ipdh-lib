@@ -267,7 +267,7 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 				iTipo: 1,
 				sNombreCliente: truncateString(clientName, 64),
 				sRifCliente: truncateString(clientRif, 20),
-				iFacturaReferencia: "000000001",
+				iFacturaReferencia: invoice.invoiceRef,
 				fechaReferencia: formatDateDDMMYYYY(new Date(invoice.createdAt)),
 				sSerialReferencia: options.referenceInvoiceSerial,
 				bLogo: false,
@@ -464,12 +464,14 @@ export async function executeDtpCommands(
 		switch (cmd.cmd) {
 			case "F0": {
 				const r = await openFiscalDoc(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F0 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F0 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "F1": {
 				const r = await addFiscalItem(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F1 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F1 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "F2": {
@@ -478,29 +480,34 @@ export async function executeDtpCommands(
 					cmd.data?.mode ?? 1,
 					cmd.data?.foreignCurrencyAmount ?? 0,
 				);
-				if (r.code !== 0) throw new Error(`F2 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F2 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "F4": {
 				const r = await payFiscalDoc(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F4 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F4 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "F5": {
 				const r = await closeFiscalDoc(client, cmd.data?.additionalLine ?? "");
-				if (r.code !== 0) throw new Error(`F5 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F5 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				documentNumber = r.documentNumber;
 				totalAmount = r.totalAmount;
 				break;
 			}
 			case "F11": {
 				const r = await payFiscalDocForeignCurrency(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F11 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`F11 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "N0": {
 				const r = await openNonFiscalDoc(client);
-				if (r.code !== 0) throw new Error(`N0 falló: código ${r.code}`);
+				if (r.code !== 0)
+					throw new Error(`N0 falló: código ${r.code} ${r.raw?.join(", ")}`);
 				break;
 			}
 			case "N1": {
