@@ -464,13 +464,12 @@ export async function executeDtpCommands(
 		switch (cmd.cmd) {
 			case "F0": {
 				const r = await openFiscalDoc(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F0 falló: ${r}`);
+				if (r.code !== 0) throw new Error(`F0 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "F1": {
 				const r = await addFiscalItem(client, cmd.data);
-				if (r.code !== 0)
-					throw new Error(`F1 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F1 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "F2": {
@@ -479,34 +478,29 @@ export async function executeDtpCommands(
 					cmd.data?.mode ?? 1,
 					cmd.data?.foreignCurrencyAmount ?? 0,
 				);
-				if (r.code !== 0)
-					throw new Error(`F2 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F2 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "F4": {
 				const r = await payFiscalDoc(client, cmd.data);
-				if (r.code !== 0)
-					throw new Error(`F4 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F4 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "F5": {
 				const r = await closeFiscalDoc(client, cmd.data?.additionalLine ?? "");
-				if (r.code !== 0)
-					throw new Error(`F5 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F5 falló: ${JSON.stringify(r)}`);
 				documentNumber = r.documentNumber;
 				totalAmount = r.totalAmount;
 				break;
 			}
 			case "F11": {
 				const r = await payFiscalDocForeignCurrency(client, cmd.data);
-				if (r.code !== 0)
-					throw new Error(`F11 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`F11 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "N0": {
 				const r = await openNonFiscalDoc(client);
-				if (r.code !== 0)
-					throw new Error(`N0 falló: código ${r.code} ${r.raw?.join(", ")}`);
+				if (r.code !== 0) throw new Error(`N0 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "N1": {
@@ -517,12 +511,12 @@ export async function executeDtpCommands(
 					cmd.data.align ?? 0,
 					cmd.data.style ?? 0,
 				);
-				if (r.code !== 0) throw new Error(`N1 falló: código ${r.code}`);
+				if (r.code !== 0) throw new Error(`N1 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			case "N3": {
 				const r = await closeNonFiscalDoc(client);
-				if (r.code !== 0) throw new Error(`N3 falló: código ${r.code}`);
+				if (r.code !== 0) throw new Error(`N3 falló: ${JSON.stringify(r)}`);
 				break;
 			}
 			default: {
