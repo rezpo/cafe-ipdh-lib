@@ -291,11 +291,13 @@ export const dtpPrinter: DtpPrinterDriver = {
 
 		let subtotalWithoutTaxes = 0;
 
+		// iTipo=1 para items de nota de crédito (devolución). Debe coincidir con F0 iTipo=1.
+		const itemTipo = 1;
 		if (!invoice.details || invoice.details.length === 0) {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: 0,
+					iTipo: itemTipo,
 					sDescripcion: "DEVOLUCION",
 					sCodigo: "DEV",
 					lCantidad: -1000,
@@ -322,9 +324,9 @@ export const dtpPrinter: DtpPrinterDriver = {
 				commands.push({
 					cmd: "F1",
 					data: {
-						iTipo: 0,
+						iTipo: itemTipo,
 						sDescripcion: truncateString(item.description, 64),
-						sCodigo: "N/A",
+						sCodigo: "DEV",
 						lCantidad,
 						sUnidad: "UND",
 						lPrecio,
@@ -351,7 +353,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: 0,
+					iTipo: itemTipo,
 					sDescripcion: "IGTF 3% pago en divisas",
 					sCodigo: "IGTF",
 					lCantidad: -1000,
