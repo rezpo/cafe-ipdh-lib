@@ -1,12 +1,22 @@
 import type { DtpClient } from "./dtp-client";
 import type { AbrirCfArgs, ItemCfArgs, PagoCfArgs } from "./dtp-printer.types";
 
+/** Formatea fecha en DDMMYYYY. Usa UTC para evitar cambios por zona horaria. */
 const formatDateDDMMYYYY = (d: Date) => {
-	const dd = String(d.getDate()).padStart(2, "0");
-	const mm = String(d.getMonth() + 1).padStart(2, "0");
-	const yyyy = String(d.getFullYear());
+	const dd = String(d.getUTCDate()).padStart(2, "0");
+	const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+	const yyyy = String(d.getUTCFullYear());
 	return `${dd}${mm}${yyyy}`;
 };
+
+/** Convierte fechaReferencia a string DDMMYYYY. Acepta Date, string DDMMYYYY o undefined. */
+function toDDMMYYYY(v: Date | string | undefined, defaultVal: string): string {
+	if (v === undefined || v === null) return defaultVal;
+	if (typeof v === "string" && /^\d{8}$/.test(v)) return v;
+	if (v instanceof Date && !Number.isNaN(v.getTime()))
+		return formatDateDDMMYYYY(v);
+	return formatDateDDMMYYYY(new Date(v as string));
+}
 
 function parseCode(r: string[], idx = 0): number {
 	const v = r[idx];
@@ -23,20 +33,23 @@ export async function getStatus(client: DtpClient) {
 		state: code === 0 && r.length > 2 ? Number(r[2] ?? -1) : -1,
 		block: code === 0 && r.length > 3 ? Number(r[3] ?? -1) : -1,
 		fiscalStatus: code === 0 && r.length > 4 ? String(r[4] ?? "") : "",
-		lastCommandResponse:
-			code === 0 && r.length > 5 ? Number(r[5] ?? -1) : -1,
+		lastCommandResponse: code === 0 && r.length > 5 ? Number(r[5] ?? -1) : -1,
 		raw: r,
 	};
 }
 
 export async function openFiscalDoc(client: DtpClient, args: AbrirCfArgs) {
+	const fechaDDMMYYYY = toDDMMYYYY(
+		args.fechaReferencia,
+		formatDateDDMMYYYY(new Date()),
+	);
 	const r = await client.send([
 		"F0",
 		String(args.iTipo ?? 0),
 		args.sNombreCliente,
 		args.sRifCliente,
-		String(args.iFacturaReferencia ?? 0),
-		formatDateDDMMYYYY(args.fechaReferencia ?? new Date()),
+		args.iFacturaReferencia ?? "",
+		fechaDDMMYYYY,
 		args.sSerialReferencia ?? "",
 		(args.bLogo ?? false) ? "1" : "0",
 		args.sLineaAdicional ?? "",
@@ -121,10 +134,7 @@ export async function addFiscalComment(
 	};
 }
 
-export async function closeFiscalDoc(
-	client: DtpClient,
-	additionalLine = "",
-) {
+export async function closeFiscalDoc(client: DtpClient, additionalLine = "") {
 	const r = await client.send(["F5", additionalLine]);
 	return {
 		code: parseCode(r),
@@ -221,10 +231,7 @@ export async function payFiscalDocForeignCurrency(
 	};
 }
 
-export async function reportX(
-	client: DtpClient,
-	noOpenDrawer = false,
-) {
+export async function reportX(client: DtpClient, noOpenDrawer = false) {
 	const parts = ["R0", "0"];
 	if (noOpenDrawer) parts.push("1");
 	const r = await client.send(parts);
@@ -236,10 +243,7 @@ export async function reportX(
 	};
 }
 
-export async function reportZ(
-	client: DtpClient,
-	noOpenDrawer = false,
-) {
+export async function reportZ(client: DtpClient, noOpenDrawer = false) {
 	const parts = ["R0", "1"];
 	if (noOpenDrawer) parts.push("1");
 	const r = await client.send(parts);

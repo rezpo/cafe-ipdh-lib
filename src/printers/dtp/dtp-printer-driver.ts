@@ -37,6 +37,14 @@ function formatDate(date: Date): string {
 	return `${day}/${month}/${year}`;
 }
 
+/** Formato DDMMYYYY para fechaReferencia de nota de crédito (usa UTC). */
+function formatDateDDMMYYYY(d: Date): string {
+	const dd = String(d.getUTCDate()).padStart(2, "0");
+	const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+	const yyyy = String(d.getUTCFullYear());
+	return `${dd}${mm}${yyyy}`;
+}
+
 function formatTime(date: Date): string {
 	const hours = date.getHours().toString().padStart(2, "0");
 	const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -259,11 +267,9 @@ export const dtpPrinter: PrinterDriver<DtpPrinterCommand> = {
 				iTipo: 1,
 				sNombreCliente: truncateString(clientName, 64),
 				sRifCliente: truncateString(clientRif, 20),
-				iFacturaReferencia: invoice.invoiceRef,
-				fechaReferencia: new Date(invoice.createdAt),
-				sSerialReferencia:
-					options.referenceInvoiceSerial ??
-					invoice.invoiceRef.toString().padStart(8, "0"),
+				iFacturaReferencia: "000000001",
+				fechaReferencia: formatDateDDMMYYYY(new Date(invoice.createdAt)),
+				sSerialReferencia: options.referenceInvoiceSerial,
 				bLogo: false,
 				sLineaAdicional: truncateString(storeLine, 64),
 			},

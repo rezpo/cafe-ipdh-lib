@@ -189,6 +189,7 @@ describe("dtpPrinter", () => {
 			expect(f0.data.sSerialReferencia).toBe("F001");
 			expect(f0.data.sNombreCliente).toBe("Cliente Test");
 			expect(f0.data.sRifCliente).toBe("V12345678");
+			expect(f0.data.fechaReferencia).toBe("01022025"); // DDMMYYYY (mockInvoice createdAt 2025-02-01)
 
 			const f1Item = commands.find(
 				(c) =>

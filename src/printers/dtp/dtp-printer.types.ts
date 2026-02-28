@@ -2,8 +2,8 @@ export type AbrirCfArgs = {
 	iTipo?: number; // default 0
 	sNombreCliente: string;
 	sRifCliente: string;
-	iFacturaReferencia?: number; // default 0
-	fechaReferencia?: Date; // default hoy
+	iFacturaReferencia?: string; // default ""
+	fechaReferencia?: Date | string; // Date o string DDMMYYYY; default hoy
 	sSerialReferencia?: string; // default ""
 	bLogo?: boolean; // default false
 	sLineaAdicional?: string; // default ""
