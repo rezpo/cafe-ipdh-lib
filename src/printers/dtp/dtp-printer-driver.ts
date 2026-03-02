@@ -495,7 +495,7 @@ export async function executeDtpCommands(
 			}
 			case "F1": {
 				const r = await addFiscalItem(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F1 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`F1 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				break;
 			}
 			case "F2": {
@@ -504,24 +504,24 @@ export async function executeDtpCommands(
 					cmd.data?.mode ?? 1,
 					cmd.data?.foreignCurrencyAmount ?? 0,
 				);
-				if (r.code !== 0) throw new Error(`F2 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`F2 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				break;
 			}
 			case "F4": {
 				const r = await payFiscalDoc(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F4 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`F4 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				break;
 			}
 			case "F5": {
 				const r = await closeFiscalDoc(client, cmd.data?.additionalLine ?? "");
-				if (r.code !== 0) throw new Error(`F5 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`F5 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				documentNumber = r.documentNumber;
 				totalAmount = r.totalAmount;
 				break;
 			}
 			case "F11": {
 				const r = await payFiscalDocForeignCurrency(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F11 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`F11 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				break;
 			}
 			case "N0": {
@@ -537,7 +537,7 @@ export async function executeDtpCommands(
 					cmd.data.align ?? 0,
 					cmd.data.style ?? 0,
 				);
-				if (r.code !== 0) throw new Error(`N1 falló: ${JSON.stringify(r)}`);
+				if (r.code !== 0) throw new Error(`N1 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
 				break;
 			}
 			case "N3": {
