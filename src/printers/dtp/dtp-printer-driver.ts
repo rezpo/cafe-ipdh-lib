@@ -23,6 +23,7 @@ import {
 	payFiscalDoc,
 	payFiscalDocForeignCurrency,
 	getSerializationData,
+	getStatus,
 	subtotalFiscalDoc,
 } from "./dtp-printer.js";
 
@@ -112,6 +113,11 @@ function paymentMethodLabel(id: PaymentMethodId): string {
  */
 export interface DtpPrinterDriver extends PrinterDriver<DtpPrinterCommand> {
 	/**
+	 * Obtiene el estado operativo de la impresora fiscal (comando C0).
+	 * Retorna code, state, block, fiscalStatus y lastCommandResponse.
+	 */
+	getStatus: typeof getStatus;
+	/**
 	 * Obtiene los datos de serialización de la impresora fiscal (comando C2).
 	 * Retorna fiscalSerial, printerSerial, kitSerial, mfSerial y maSerial.
 	 */
@@ -125,6 +131,7 @@ export interface DtpPrinterDriver extends PrinterDriver<DtpPrinterCommand> {
 export const dtpPrinter: DtpPrinterDriver = {
 	model: "dtp-80i",
 
+	getStatus,
 	getSerialization: getSerializationData,
 
 	buildInvoiceCommands(
