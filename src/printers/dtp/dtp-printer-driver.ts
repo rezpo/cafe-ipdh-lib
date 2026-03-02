@@ -335,7 +335,8 @@ export const dtpPrinter: DtpPrinterDriver = {
 				const price = item.price ?? 0;
 				const lPrecio = Math.round(Math.max(price, 0) * 100);
 				const quantity = item.quantity ?? 1;
-				const lCantidad = -Math.round(Math.max(quantity, 1) * 1000);
+				// iTipo=1 (Anulación) ya indica devolución; lCantidad debe ser positivo
+				const lCantidad = Math.round(Math.max(quantity, 1) * 1000);
 
 				subtotalWithoutTaxes += price * Math.max(quantity, 1);
 
@@ -343,8 +344,8 @@ export const dtpPrinter: DtpPrinterDriver = {
 					cmd: "F1",
 					data: {
 						iTipo: itemTipo,
-						sDescripcion: truncateString(item.description ?? "", 20),
-						sCodigo: "N/A",
+						sDescripcion: truncateString(item.description ?? "", 64),
+						sCodigo: "DEV",
 						lCantidad,
 						sUnidad: "1",
 						lPrecio,
