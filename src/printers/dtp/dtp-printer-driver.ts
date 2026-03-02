@@ -16,6 +16,7 @@ import type { DtpPrinterCommand } from "./dtp-commands.js";
 import {
 	addFiscalItem,
 	addNonFiscalLine,
+	cancelFiscalDoc,
 	closeFiscalDoc,
 	closeNonFiscalDoc,
 	openFiscalDoc,
@@ -122,6 +123,16 @@ export interface DtpPrinterDriver extends PrinterDriver<DtpPrinterCommand> {
 	 * Retorna fiscalSerial, printerSerial, kitSerial, mfSerial y maSerial.
 	 */
 	getSerialization: typeof getSerializationData;
+	/**
+	 * Cancela el documento fiscal abierto (comando F6).
+	 * Retorna code y raw.
+	 */
+	cancelFiscalDoc: typeof cancelFiscalDoc;
+	/**
+	 * Cierra un documento no fiscal abierto (comando N3).
+	 * Usar cuando state=1 antes de abrir un documento fiscal.
+	 */
+	closeNonFiscalDoc: typeof closeNonFiscalDoc;
 }
 
 /**
@@ -130,10 +141,10 @@ export interface DtpPrinterDriver extends PrinterDriver<DtpPrinterCommand> {
  */
 export const dtpPrinter: DtpPrinterDriver = {
 	model: "dtp-80i",
-
 	getStatus,
 	getSerialization: getSerializationData,
-
+	cancelFiscalDoc,
+	closeNonFiscalDoc,
 	buildInvoiceCommands(
 		order: Order,
 		options: BuildInvoiceOptions,
