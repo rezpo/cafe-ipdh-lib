@@ -198,7 +198,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 					sDescripcion: truncateString(item.name, 64),
 					sCodigo: truncateString(item.sku ?? "N/A", 20),
 					lCantidad,
-					sUnidad: "1",
+					sUnidad: "",
 					lPrecio,
 					iImpuesto,
 					iDecPrecio: 2,
@@ -225,7 +225,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 					sDescripcion: "IGTF 3% pago en divisas",
 					sCodigo: "IGTF",
 					lCantidad: 1000,
-					sUnidad: "1",
+					sUnidad: "",
 					lPrecio: Math.round(igtfAmount * 100),
 					iImpuesto: 4,
 					iDecPrecio: 2,
@@ -319,7 +319,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 					sDescripcion: "DEVOLUCION",
 					sCodigo: "DEV",
 					lCantidad: 1000,
-					sUnidad: "1",
+					sUnidad: "",
 					lPrecio: Math.round(invoice.totalAmount * 100),
 					iImpuesto: mapTaxIdToDtpCode(
 						invoice.taxesBreakdown?.[0]?.taxId ?? null,
@@ -335,8 +335,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 				const price = item.price ?? 0;
 				const lPrecio = Math.round(Math.max(price, 0) * 100);
 				const quantity = item.quantity ?? 1;
-				// lCantidad negativo = devolución (dtpClass pasa lCantidad tal cual). sUnidad "1", sCodigo "DEV" por 273.
-				const lCantidad = -Math.round(Math.max(quantity, 1) * 1000);
+				const lCantidad = Math.round(Math.max(quantity, 1) * 1000);
 
 				subtotalWithoutTaxes += price * Math.max(quantity, 1);
 
@@ -347,7 +346,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 						sDescripcion: truncateString(item.description ?? "", 64),
 						sCodigo: "DEV",
 						lCantidad,
-						sUnidad: "1",
+						sUnidad: "",
 						lPrecio,
 						iImpuesto,
 						iDecPrecio: 2,
@@ -376,7 +375,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 					sDescripcion: "IGTF 3% pago en divisas",
 					sCodigo: "IGTF",
 					lCantidad: 1000,
-					sUnidad: "1",
+					sUnidad: "",
 					lPrecio: Math.round(igtfAmount * 100),
 					iImpuesto: 4,
 					iDecPrecio: 2,
