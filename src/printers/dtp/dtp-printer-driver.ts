@@ -309,7 +309,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 
 		let subtotalWithoutTaxes = 0;
 
-		// iTipo=1 para items de nota de crédito (devolución). Debe coincidir con F0 iTipo=1.
+		// iTipo=1 (Anulación). dtpClass ItemCF F1 / Manual: 0=Venta, 1=Anulación. F0 iTipo=1 = Nota crédito.
 		const itemTipo = 1;
 		if (!invoice.details || invoice.details.length === 0) {
 			commands.push({
@@ -335,8 +335,8 @@ export const dtpPrinter: DtpPrinterDriver = {
 				const price = item.price ?? 0;
 				const lPrecio = Math.round(Math.max(price, 0) * 100);
 				const quantity = item.quantity ?? 1;
-				// iTipo=1 (Anulación) ya indica devolución; lCantidad debe ser positivo
-				const lCantidad = Math.round(Math.max(quantity, 1) * 1000);
+				// lCantidad negativo = devolución (dtpClass pasa lCantidad tal cual). sUnidad "1", sCodigo "DEV" por 273.
+				const lCantidad = -Math.round(Math.max(quantity, 1) * 1000);
 
 				subtotalWithoutTaxes += price * Math.max(quantity, 1);
 

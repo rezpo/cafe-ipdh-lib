@@ -199,7 +199,8 @@ describe("dtpPrinter", () => {
 			) as { data: { lCantidad: number; iTipo: number } };
 			expect(f1Item).toBeDefined();
 			expect(f1Item.data.lCantidad).toBeLessThan(0);
-			expect(f1Item.data.iTipo).toBe(0);
+			// dtpClass/Manual: iTipo 0=Venta, 1=Anulación. Nota crédito usa iTipo=1
+			expect(f1Item.data.iTipo).toBe(1);
 
 			expect(commands).toContainEqual(
 				expect.objectContaining({
