@@ -506,7 +506,20 @@ export async function executeDtpCommands(
 			}
 			case "F1": {
 				const r = await addFiscalItem(client, cmd.data);
-				if (r.code !== 0) throw new Error(`F1 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)}`);
+				const body = await client.send([
+					"F1",
+					String(cmd.data.iTipo ?? 0),
+					cmd.data.sDescripcion,
+					cmd.data.sCodigo,
+					String(cmd.data.lCantidad),
+					cmd.data.sUnidad,
+					String(cmd.data.lPrecio),
+					String(cmd.data.iImpuesto),
+					String(cmd.data.iDecPrecio),
+					String(cmd.data.iDecCantidad),
+				]);
+				
+				if (r.code !== 0) throw new Error(`F1 falló: ${JSON.stringify(r)} ${JSON.stringify(cmd.data)} ${JSON.stringify(body)}`);
 				break;
 			}
 			case "F2": {
