@@ -154,7 +154,85 @@ async function imprimirFactura(order: Order, host: string, port: number) {
 | Driver | Modelo | Métodos |
 |--------|--------|---------|
 | `aegPrinter` | AEG-R1 | `buildInvoiceCommands`, `buildReceiptCommands` |
-| `dtpPrinter` | DTP-80i | `buildInvoiceCommands`, `buildReceiptCommands`, `buildCreditNoteCommands` |
+| `dtpPrinter` | DTP-80i | `buildInvoiceCommands`, `buildReceiptCommands`, `buildCreditNoteCommands`, `getStatus`, `getSerialization`, `cancelFiscalDoc`, `closeNonFiscalDoc` |
+
+### Handlers DTP de bajo nivel (`dtpPrinter`)
+
+Funciones para control directo de la impresora DTP. Requieren un `DtpClient` conectado.
+
+| Método | Comando | Descripción |
+|--------|---------|-------------|
+| `getStatus(client)` | C0 | Estado operativo: `code`, `state`, `block`, `fiscalStatus`, `lastCommandResponse` |
+| `getSerialization(client)` | C2 | Datos de serialización: `fiscalSerial`, `printerSerial`, `kitSerial`, `mfSerial`, `maSerial` |
+| `cancelFiscalDoc(client)` | F6 | Cancela el documento fiscal abierto (p. ej. si `state !== 0` antes de F0) |
+| `closeNonFiscalDoc(client)` | N3 | Cierra un documento no fiscal abierto (usar si `state=1` antes de abrir fiscal) |
+
+```ts
+import { DtpClient, dtpPrinter } from "@danielrebolledo/cafe-ipdh-lib";
+
+await client.connect();
+
+// Verificar estado antes de operar
+const st = await dtpPrinter.getStatus(client);
+if (st.code === 0 && st.state !== 0) {
+  await dtpPrinter.cancelFiscalDoc(client); // liberar estado
+}
+
+// Serial fiscal para nota de crédito
+const serial = await dtpPrinter.getSerialization(client);
+// serial.fiscalSerial, serial.printerSerial...
+```
+
+### Handlers DTP (comandos ejecutables)
+
+`executeDtpCommands` y `sendPrinterCommands` ejecutan secuencialmente estos comandos contra un `DtpClient` conectado:
+
+| Cmd | Descripción |
+|-----|-------------|
+| **F0** | Abrir documento fiscal (factura o nota de crédito) |
+| **F1** | Agregar ítem fiscal (venta o anulación) |
+| **F2** | Subtotal (modo, pago en divisas) |
+| **F4** | Pago en moneda nacional |
+| **F5** | Cerrar documento fiscal |
+| **F11** | Pago en divisas (IGTF) |
+| **N0** | Abrir documento no fiscal |
+| **N1** | Agregar línea a documento no fiscal |
+| **N3** | Cerrar documento no fiscal |
+
+#### Nota de crédito (DTP)
+
+```ts
+import {
+  DtpClient,
+  dtpPrinter,
+  sendPrinterCommands,
+  type Invoice,
+} from "@danielrebolledo/cafe-ipdh-lib";
+
+const invoice: Invoice = {
+  invoiceRef: "0001",
+  createdAt: new Date().toISOString(),
+  customerName: "Cliente",
+  customerID: "V-12345678",
+  details: [{ description: "Producto", quantity: 1, price: 300 }],
+  taxesBreakdown: [{ taxId: "IVA_G" }],
+  totalAmount: 348,
+};
+
+const commands = dtpPrinter.buildCreditNoteCommands(invoice, {
+  paymentMethodId: "cash_nat",
+  storeName: "Mi Tienda",
+  referenceInvoiceSerial: "F001", // opcional; si no hay, usa invoiceRef con padding
+});
+
+const result = await sendPrinterCommands({
+  brand: "DTP",
+  model: "80i",
+  client: dtpClient,
+  commands,
+});
+// result.documentNumber = número de la nota de crédito
+```
 
 ### `sendPrinterCommands`
 
@@ -162,6 +240,17 @@ Función unificada para enviar comandos a cualquier impresora.
 
 - **AEG**: `{ brand: "AEG", model: "R1", ip, commands }`
 - **DTP**: `{ brand: "DTP", model: "80i", client, commands }`
+
+Opciones (segundo argumento):
+- `timeout` (ms): timeout para la petición HTTP en AEG. Si no se especifica, no hay límite.
+
+```ts
+// Ejemplo con timeout (AEG)
+const result = await sendPrinterCommands(
+  { brand: "AEG", model: "R1", ip: printerIp, commands },
+  { timeout: 30000 },
+);
+```
 
 Retorna:
 - AEG: `PrinterCommandResponse[]`
@@ -184,6 +273,7 @@ import {
 const client = new DtpClient({
   host: "192.168.1.10",
   port: 3010,
+  connectTimeoutMs: 15000, // opcional; default 3000
   createConnection: createNodeDtpConnection,
 });
 await client.connect();
@@ -196,11 +286,24 @@ const result = await sendPrinterCommands({
 });
 ```
 
+### `executeDtpCommands`
+
+Para control fino sobre comandos DTP sin pasar por `sendPrinterCommands`:
+
+```ts
+import { DtpClient, dtpPrinter, executeDtpCommands } from "@danielrebolledo/cafe-ipdh-lib";
+
+const commands = dtpPrinter.buildCreditNoteCommands(invoice, opts);
+const { documentNumber, totalAmount } = await executeDtpCommands(client, commands);
+```
+
 ### Tipos exportados
 
 - `Order`, `OrderItem`, `FiscalClient`, `OrderPayment`
+- `Invoice`, `InvoiceDetail`, `InvoiceTaxBreakdown`
 - `AegPrinterCommand`, `DtpPrinterCommand`
-- `BuildInvoiceOptions`, `BuildReceiptOptions`, `BuildCreditNoteOptions`
+- `BuildInvoiceOptions`, `BuildReceiptOptions`, `BuildCreditNoteOptions`, `BuildCreditNoteFromInvoiceOptions`
+- `ExecuteDtpCommandsResult`
 - `SendPrinterCommandsArgs`, `SendPrinterCommandsResult`
 - `PaymentMethodId`, `PrinterTaxValues`, `TaxValues`
 

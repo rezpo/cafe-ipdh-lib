@@ -9,7 +9,7 @@
  * const client = new DtpClient({
  *   host: "192.168.1.10",
  *   port: 3010,
- *   createConnection: createNodeDtpConnection(),
+ *   createConnection: createNodeDtpConnection,
  * });
  * await client.connect();
  * ```
