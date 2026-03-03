@@ -315,7 +315,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: itemTipo,
+					iTipo: 0,
 					sDescripcion: "DEVOLUCION",
 					sCodigo: "DEV",
 					lCantidad: 1000,
@@ -342,7 +342,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 				commands.push({
 					cmd: "F1",
 					data: {
-						iTipo: itemTipo,
+						iTipo: 0,
 						sDescripcion: truncateString(item.description ?? "", 64),
 						sCodigo: "DEV",
 						lCantidad,
@@ -371,7 +371,7 @@ export const dtpPrinter: DtpPrinterDriver = {
 			commands.push({
 				cmd: "F1",
 				data: {
-					iTipo: itemTipo,
+					iTipo: 0,
 					sDescripcion: "IGTF 3% pago en divisas",
 					sCodigo: "IGTF",
 					lCantidad: 1000,
