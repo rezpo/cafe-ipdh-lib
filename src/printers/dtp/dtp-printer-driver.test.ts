@@ -4,7 +4,7 @@ import type { Order } from "../../types/order.js";
 import { dtpPrinter } from "./dtp-printer-driver.js";
 
 const mockInvoice: Invoice = {
-	invoiceRef: 42,
+	invoiceRef: "42",
 	createdAt: "2025-02-01T10:00:00.000Z",
 	customerName: "Cliente Test",
 	customerID: "V12345678",
