@@ -36,7 +36,7 @@ export type AegPrinterCommand =
 	| { cmd: "efeNorJuIzDNF"; data: string }
 	| { cmd: "endDNF"; data: string }
 	| { cmd: "encNC"; data: [string, string] | [string, string, string] }
-	| { cmd: "nroFacNC"; data: number }
+	| { cmd: "nroFacNC"; data: string }
 	| { cmd: "fechFacNC"; data: string }
 	| { cmd: "conSerNC"; data: string }
 	| { cmd: "rifCiNC"; data: string }
